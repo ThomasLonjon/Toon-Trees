@@ -5,6 +5,8 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import * as dat from "lil-gui";
 import treesVertexShader from "./shaders/trees/vertex.glsl";
 import treesFragmentShader from "./shaders/trees/fragment.glsl";
+import outlineVertexShader from "./shaders/outline/vertex.glsl";
+import outlineFragmentShader from "./shaders/outline/fragment.glsl";
 
 // THREE.ColorManagement.enabled = false
 
@@ -22,13 +24,13 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x16221f);
+scene.background = new THREE.Color(0xaeaee0);
 
 // -----------------------------------------------------------------
 // Lights
 // -----------------------------------------------------------------
 const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-scene.add(ambientLight);
+// scene.add(ambientLight);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
 directionalLight.castShadow = true;
@@ -40,6 +42,8 @@ directionalLight.shadow.camera.right = 7;
 directionalLight.shadow.camera.bottom = -7;
 directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
+
+gui.add(directionalLight.position, "y").min(0).max(100).step(11).name("height");
 
 // -----------------------------------------------------------------
 // Models
@@ -57,6 +61,9 @@ gltfLoader.setDRACOLoader(dracoLoader);
 let mixer = null;
 
 // material
+
+const material = new THREE.MeshToonMaterial();
+
 const toonMaterial = new THREE.ShaderMaterial({
   vertexShader: treesVertexShader,
   fragmentShader: treesFragmentShader,
@@ -67,12 +74,38 @@ const toonMaterial = new THREE.ShaderMaterial({
   side: THREE.DoubleSide,
 });
 
-const material = new THREE.MeshToonMaterial();
+const outlineMaterial = new THREE.ShaderMaterial({
+  vertexShader: outlineVertexShader,
+  fragmentShader: outlineFragmentShader,
+  uniforms: {
+    lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
+    color: { value: new THREE.Color("black") },
+    outlineThickness: { value: 0.05 },
+  },
+  side: THREE.BackSide,
+});
 
 gltfLoader.load("/trees.glb", (gltf) => {
   gltf.scene.traverse((child) => {
-    child.material = toonMaterial;
+    if (child.isMesh) {
+      // Appliquer le matériau principal
+      child.material = material;
+
+      // Créer un nouveau mesh pour le contour
+      const outlineMesh = new THREE.Mesh(child.geometry, outlineMaterial);
+      outlineMesh.position.copy(child.position);
+      outlineMesh.rotation.copy(child.rotation);
+      outlineMesh.scale.copy(child.scale);
+
+      // Agrandir légèrement le mesh du contour
+      const scaleIncrease = 1.005; // L'augmentation d'échelle pour le contour, ajustez selon besoin
+      outlineMesh.scale.multiplyScalar(scaleIncrease);
+
+      // Ajouter le mesh du contour au même parent que le mesh original
+      child.parent.add(outlineMesh);
+    }
   });
+
   scene.add(gltf.scene);
 });
 
