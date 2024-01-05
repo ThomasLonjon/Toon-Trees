@@ -24,7 +24,7 @@ const canvas = document.querySelector("canvas.webgl");
 
 // Scene
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xaeaee0);
+scene.background = new THREE.Color(0x9e9e9e);
 
 // -----------------------------------------------------------------
 // Lights
@@ -63,6 +63,7 @@ let mixer = null;
 // material
 
 const material = new THREE.MeshToonMaterial();
+// material.color.set(0xebebc6);
 
 const toonMaterial = new THREE.ShaderMaterial({
   vertexShader: treesVertexShader,
@@ -80,7 +81,7 @@ const outlineMaterial = new THREE.ShaderMaterial({
   uniforms: {
     lightDirection: { value: new THREE.Vector3(1, 1, 1).normalize() },
     color: { value: new THREE.Color("black") },
-    outlineThickness: { value: 0.05 },
+    outlineThickness: { value: 0.015 },
   },
   side: THREE.BackSide,
 });
@@ -98,7 +99,7 @@ gltfLoader.load("/trees.glb", (gltf) => {
       outlineMesh.scale.copy(child.scale);
 
       // Agrandir légèrement le mesh du contour
-      const scaleIncrease = 1.005; // L'augmentation d'échelle pour le contour, ajustez selon besoin
+      const scaleIncrease = 1.0; // L'augmentation d'échelle pour le contour, ajustez selon besoin
       outlineMesh.scale.multiplyScalar(scaleIncrease);
 
       // Ajouter le mesh du contour au même parent que le mesh original
